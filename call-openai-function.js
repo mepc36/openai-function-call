@@ -10,9 +10,35 @@ const getRandomDate = (start, end) => {
 }
 
 const getDeliveryDate = () => {
-  console.log('Calling tool...')
+  console.log('Calling getDeliveryDate() tool...')
   const deliveryDate = getRandomDate(new Date(2012, 0, 1), new Date())
   return deliveryDate
+}
+
+const mockLlmMessages = () => {
+  const llmPersona = "You are a helpful customer support assistant. Use the supplied tools to assist the user."
+  const deliveryDateRequest = "Hi, can you tell me the delivery date for my order?"
+  const orderIdRequest = "Hi there! I can help with that. Can you please provide your order ID?"
+  const messageWithOrderId = "i think it is order_12345"
+
+  const mockedMessages = [
+    { role: "system", content: llmPersona },
+    { role: "user", content: deliveryDateRequest },
+    { role: "assistant", content: orderIdRequest },
+    { role: "user", content: messageWithOrderId },
+  ];
+
+  return mockedMessages
+}
+
+const getGptResponse = async (model = 'gpt-4o', messages = [], tools = null) => {
+  const gptResponse = await openAiClient.chat.completions.create({
+    model,
+    messages,
+    tools,
+  });
+
+  return gptResponse
 }
 
 const tools = [
@@ -36,34 +62,23 @@ const tools = [
   }
 ];
 
-const model = 'gpt-4o'
+const handleGptResponse = (gptResponse) => {
+  if (gptResponse?.choices.length && gptResponse?.choices[0]?.message?.content) {
+    const { message: { content } } = gptResponse?.choices.length && gptResponse?.choices[0]
+    console.log(`Bot response:\n${content}`)
+  } else {
+    throw new Error(`No response found`)
+  }
+}
 
   ;
 
 (async () => {
   try {
-    console.log('START')
+    console.log('------ START')
 
-    const llmPersona = "You are a helpful customer support assistant. Use the supplied tools to assist the user."
-    const deliveryDateRequest = "Hi, can you tell me the delivery date for my order?"
-    const orderIdRequest = "Hi there! I can help with that. Can you please provide your order ID?"
-    const messageWithOrderId = "i think it is order_12345"
-
-    const messages = [
-      { role: "system", content: llmPersona },
-      { role: "user", content: deliveryDateRequest },
-      { role: "assistant", content: orderIdRequest },
-      { role: "user", content: messageWithOrderId },
-    ];
-
-    console.log(`Mocking user's request for a delivery date...`)
-    console.log(`Mocking LLM's request for an order ID...`)
-
-    const toolCallResponse = await openAiClient.chat.completions.create({
-      model,
-      messages,
-      tools,
-    });
+    const messages = mockLlmMessages()
+    const toolCallResponse = await getGptResponse('gpt-4o', messages, tools)
 
     const toolCallMessage = toolCallResponse.choices[0].message
     const toolCall = toolCallMessage.tool_calls[0];
@@ -86,23 +101,14 @@ const model = 'gpt-4o'
         tool_call_id
       };
 
-      const deliveryDateResponse = await openAiClient.chat.completions.create({
-        model,
-        messages: [...messages, toolCallMessage, toolCallResult]
-      });
-
-      if (deliveryDateResponse?.choices.length && deliveryDateResponse?.choices[0]?.message?.content) {
-        const { message: { content } } = deliveryDateResponse?.choices.length && deliveryDateResponse?.choices[0]
-        console.log(`Bot response:\n${content}`)
-      } else {
-        throw new Error(`No response found`)
-      }
+      const deliveryDateResponse = await getGptResponse('gpt-4o', [...messages, toolCallMessage, toolCallResult])
+      handleGptResponse(deliveryDateResponse)
     } else {
       throw new Error(`Model requested to call an unrecognized tool`)
     }
   } catch (error) {
-    console.log('ERROR:', error)
+    console.log('------ ERROR:', error)
   } finally {
-    console.log('DONE')
+    console.log('------ DONE')
   }
 })()
