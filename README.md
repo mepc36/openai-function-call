@@ -25,9 +25,10 @@ cp .env.example .env
 4. Run the script:
 
 ```
-node call-openai-function.js
+node call-openai-tool.js
 ```
 
 ## TODO:
 
 1. Integrate this call at a custom layer inside a Kong API Gateway (perhaps via an event hook?)
+2. Handle the edge tool-calling cases enumerated [here](https://platform.openai.com/docs/guides/function-calling/edge-cases).
