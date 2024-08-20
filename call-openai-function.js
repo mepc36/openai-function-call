@@ -56,8 +56,8 @@ const model = 'gpt-4o'
       { role: "user", content: messageWithOrderId },
     ];
 
-    console.log(`Mocking user's request delivery date...`)
-    console.log(`Mocking LLM's request for order ID...`)
+    console.log(`Mocking user's request for a delivery date...`)
+    console.log(`Mocking LLM's request for an order ID...`)
 
     const toolCallResponse = await openAiClient.chat.completions.create({
       model,
