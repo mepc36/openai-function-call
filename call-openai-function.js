@@ -66,8 +66,8 @@ const model = 'gpt-4o'
     });
 
     const toolCallMessage = toolCallResponse.choices[0].message
-
     const toolCall = toolCallMessage.tool_calls[0];
+
     // NOTE: The presence of this .arguments property is what indicates that the model has generated a function call
     // source: https://platform.openai.com/docs/guides/function-calling/if-the-model-generated-a-function-call
     const toolArguments = JSON.parse(toolCall.function.arguments);
@@ -75,6 +75,7 @@ const model = 'gpt-4o'
 
     if (toolCall.function.name === 'getDeliveryDate') {
       const delivery_date = getDeliveryDate(order_id);
+      const { id: tool_call_id } = toolCallMessage.tool_calls[0]
 
       const toolCallResult = {
         role: "tool",
@@ -82,15 +83,12 @@ const model = 'gpt-4o'
           order_id,
           delivery_date
         }),
-        tool_call_id: toolCallMessage.tool_calls[0].id
+        tool_call_id
       };
-
-      messages.push(toolCallMessage)
-      messages.push(toolCallResult)
 
       const deliveryDateResponse = await openAiClient.chat.completions.create({
         model,
-        messages
+        messages: [...messages, toolCallMessage, toolCallResult]
       });
 
       if (deliveryDateResponse?.choices.length && deliveryDateResponse?.choices[0]?.message?.content) {
