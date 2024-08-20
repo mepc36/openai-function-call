@@ -68,6 +68,8 @@ const model = 'gpt-4o'
     const toolCallMessage = toolCallResponse.choices[0].message
 
     const toolCall = toolCallMessage.tool_calls[0];
+    // NOTE: The presence of this .arguments property is what indicates that the model has generated a function call
+    // source: https://platform.openai.com/docs/guides/function-calling/if-the-model-generated-a-function-call
     const toolArguments = JSON.parse(toolCall.function.arguments);
     const { order_id } = toolArguments;
 
